@@ -213,6 +213,7 @@ class IMAPServer:
                     try:
                         # Try GSSAPI and continue if it fails
                         if 'AUTH=GSSAPI' in imapobj.capabilities and have_gss:
+                            self.connectionlock.acquire()
                             self.ui.debug('imap',
                                 'Attempting GSSAPI authentication')
                             try:
@@ -223,8 +224,12 @@ class IMAPServer:
                                     'GSSAPI Authentication failed')
                             else:
                                 self.gssapi = True
+                                kerberos.authGSSClientClean(self.gss_vc)
+                                self.gss_vc = None
+                                self.gss_step = self.GSS_STATE_STEP
                                 #if we do self.password = None then the next attempt cannot try...
                                 #self.password = None
+                            self.connectionlock.release()
 
                         if not self.gssapi:
                             if 'AUTH=CRAM-MD5' in imapobj.capabilities:
